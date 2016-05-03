@@ -39,7 +39,7 @@ lab.experiment('game', { timeout: 1000 }, () => {
         const creator = new Player(0);
         Code.expect(creator.id).to.equal(0); //avoid no-unused vars from lint
 
-        const game = new Game(0, creator);
+        const game = new Game(0, creator.id);
         Code.expect(game).to.be.an.object();
         Code.expect(game.id).to.equal(0);
         Code.expect(game.players.length).to.equal(1);
@@ -55,7 +55,7 @@ lab.experiment('game', { timeout: 1000 }, () => {
         const creator = new Player(0);
         Code.expect(creator.id).to.equal(0); //avoid no-unused vars from lint
 
-        const game = new Game(0, creator);
+        const game = new Game(0, creator.id);
         Code.expect(game).to.be.an.object();
         Code.expect(game.id).to.equal(0);
         Code.expect(game.players.length).to.equal(1);
@@ -96,6 +96,12 @@ lab.experiment('game', { timeout: 1000 }, () => {
         teams = game.GetTeams();
         Code.expect(teams[0].players.length).to.equal(2);
         Code.expect(teams[1].players.length).to.equal(3);
+        Code.expect(game.players.length).to.equal(5);
+        Code.expect(game.players[0]).to.equal(creator.id);
+        Code.expect(game.players[1]).to.equal(player1.id);
+        Code.expect(game.players[2]).to.equal(player2.id);
+        Code.expect(game.players[3]).to.equal(player3.id);
+        Code.expect(game.players[4]).to.equal(player4.id);
 
         //Change team
         game.AssignPlayerToTeam(teams[1].players[2], 0);
@@ -106,8 +112,14 @@ lab.experiment('game', { timeout: 1000 }, () => {
         //Do a game.Start here and expect an exception to be thrown because spy masters not assigned
 
         teams = game.GetTeams();
-        game.AssignSpymaster(0, teams[0].players[0]);
-        Code.expect(teams[0].spyMaster).to.equal(teams[0].players[0]);
+        game.AssignSpymaster(1, teams[1].players[0]);
+        Code.expect(teams[1].spyMaster).to.equal(teams[1].players[0]);
+        //spymaster changing team
+        game.AssignPlayerToTeam(teams[1].players[0], 0);
+        Code.expect(teams[1].spyMaster).to.equal(null);
+
+        // Assign player2 to blue team to ensure at least 2 players per team
+        game.AssignPlayerToTeam(player2.id, 1);
 
         game.ChooseSpyMasters();
         teams = game.GetTeams();
