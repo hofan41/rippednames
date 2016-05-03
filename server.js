@@ -86,7 +86,7 @@ Io.on('connection', (socket) => {
                 socket.username = data.username;
                 socket.gameId = gameId;
 
-                internals.gameInstances[gameId] = { players: new Set(), game: new Game(gameId, new Player(data.username)) };
+                internals.gameInstances[gameId] = { players: new Set(), game: new Game(gameId, data.username) };
 
                 // Add the username the players set
                 internals.gameInstances[gameId].players.add(data.username);
@@ -105,8 +105,6 @@ Io.on('connection', (socket) => {
         if (gameCreated) {
             callback( { status: 'success', gameId: socket.gameId } );
             console.log(data.username + ' created new game ' + socket.gameId);
-
-            Io.to(socket.gameId).emit('update team settings', getTeams(socket.gameId));
         }
         else {
             callback( failStatus('Unable to create new game') );
@@ -141,7 +139,7 @@ Io.on('connection', (socket) => {
             internals.gameInstances[data.gameId].players.add(data.username);
 
             // Add a new player to the game
-            internals.gameInstances[data.gameId].game.AddPlayer(new Player(data.username));
+            internals.gameInstances[data.gameId].game.AddPlayer(data.username);
 
             // Join this socket to a room identified by the gameId
             socket.join(data.gameId);
@@ -194,6 +192,7 @@ Io.on('connection', (socket) => {
 
         try {
             internals.gameInstances[socket.gameId].game.AssignTeamsRandomly();
+            internals.gameInstances[socket.gameId].game.ChooseSpyMasters();
             callback(successStatus());
         }
         catch (err) {
