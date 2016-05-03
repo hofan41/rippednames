@@ -30,8 +30,8 @@ exports.Game = module.exports.Game = internals.Game = function (id, creator) {
 
     Hoek.assert(this instanceof internals.Game, 'Game must be instantiated using new');
     this.id = id;
-    this.players = new Map();
-    this.players.set(creator.id, creator);
+    this.players = [];
+    this.players.push(creator.id);
     this.teams = [new internals.Team(0), new internals.Team(1)];  //note hardcoded to 2 teams
     this.unteamedPlayerCount = 1;
     //count down to 0 when all conditions to start game is meet
@@ -44,23 +44,80 @@ exports.Game = module.exports.Game = internals.Game = function (id, creator) {
 };
 
 //--    Game setup
-internals.Game.prototype.AddPlayer = function (player) {
+internals.Game.prototype.AddPlayer = function (playerId) {
 
-    this.players.set(player.id, player);
-    ++(this.unteamedPlayerCount);
+    if (this.players.indexOf(playerId) === -1) {
+        this.players.push(playerId);
+        ++(this.unteamedPlayerCount);
+    }
+
 };
 
 internals.Game.prototype.AssignPlayerToTeam = function (playerId, teamId) {
 
     const otherTeamId = (teamId === 0) ? 1 : 0;    //note: hardcoded to 2 teams
-    if (this.teams[otherTeamId].players.indexOf(playerId) !== -1) {
-        this.teams[otherTeamId].players.delete(playerId);
+    const index = this.teams[otherTeamId].players.indexOf(playerId);
+    if (index !== -1) {
+        this.teams[otherTeamId].players.splice(index, 1);
+        ++(this.unteamedPlayerCount);
     }
 
     if (this.teams[teamId].players.indexOf(playerId) === -1) {
         this.teams[teamId].players.push(playerId);
         --(this.unteamedPlayerCount);
     }
+};
+
+internals.Game.prototype.AssignTeamsRandomly = function () {
+
+    if (this.players.length < 4) {
+        throw 'There must be at least 4 players';
+    }
+
+    this.teams[0] = new internals.Team(0);
+    this.teams[1] = new internals.Team(1);
+    this.unteamedPlayerCount = this.players.length;
+
+    const firstTeamSize = Math.floor(this.players.length / 2);    //take the floor for this one
+    const secondTeamSize = this.players.length - firstTeamSize;
+
+    while (this.teams[0].players.length < firstTeamSize) {
+        const randomIndex = Math.floor(Math.random() * this.players.length);
+        this.AssignPlayerToTeam(this.players[randomIndex], 0);
+        /*
+        if (this.teams[0].players.indexOf(this.players[randomIndex]) === -1) {
+            this.teams[0].players.push(this.players[randomIndex]);
+            --(this.unteamedPlayerCount)
+        }
+        */
+    }
+
+    while (this.teams[1].players.length < secondTeamSize) {
+        const randomIndex = Math.floor(Math.random() * this.players.length);
+        //Make sure the player isn't in the other team already
+        if ((this.teams[0].players.indexOf(this.players[randomIndex])) === -1) {
+            this.AssignPlayerToTeam(this.players[randomIndex], 1);
+            /*
+            this.teams[1].players.push(this.players[randomIndex]);
+            --(this.unteamedPlayerCount)
+            */
+        }
+    }
+};
+
+internals.Game.prototype.AssignSpymaster = function (teamId, playerId) {
+
+    if (this.unteamedPlayerCount !== 0) {
+        let verb = 'are';
+        if (this.unteamedPlayerCount === 1) {
+            verb = 'is';
+        }
+        throw 'Players need to team up first. There ' + verb + ' players unteamed.';
+    }
+
+    Hoek.assert(this.teams[teamId].players.indexOf(playerId) !== -1, 'Player must be on the corresponding team');
+
+    this.teams[teamId].spyMaster = playerId;
 };
 
 internals.Game.prototype.ChooseSpyMasters = function () {
@@ -70,14 +127,14 @@ internals.Game.prototype.ChooseSpyMasters = function () {
         if (this.unteamedPlayerCount === 1) {
             verb = 'is';
         }
-        throw 'Players need to team up first. There ' + verb + 'players unteamed.';
+        throw 'Players need to team up first. There ' + verb + ' players unteamed.';
     }
 
-    let randomIndex = Math.floor(Math.random() * this.teams[0].size);
-    this.teams[0].spyMaster = this.players[randomIndex];
+    let randomIndex = Math.floor(Math.random() * this.teams[0].players.length);
+    this.teams[0].spyMaster = this.teams[0].players[randomIndex];
 
-    randomIndex = Math.floor(Math.random() * this.teams[1].size);
-    this.teams[1].spyMaster = this.players[randomIndex];
+    randomIndex = Math.floor(Math.random() * this.teams[1].players.length);
+    this.teams[1].spyMaster = this.teams[1].players[randomIndex];
 
     this._CreditReadyToStartCondition();
 };

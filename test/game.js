@@ -42,7 +42,7 @@ lab.experiment('game', { timeout: 1000 }, () => {
         const game = new Game(0, creator);
         Code.expect(game).to.be.an.object();
         Code.expect(game.id).to.equal(0);
-        Code.expect(game.players.size).to.equal(1);
+        Code.expect(game.players.length).to.equal(1);
 
         done();
     });
@@ -58,21 +58,21 @@ lab.experiment('game', { timeout: 1000 }, () => {
         const game = new Game(0, creator);
         Code.expect(game).to.be.an.object();
         Code.expect(game.id).to.equal(0);
-        Code.expect(game.players.size).to.equal(1);
+        Code.expect(game.players.length).to.equal(1);
 
         const player1 = new Player(1);
         const player2 = new Player(2);
         const player3 = new Player(3);
 
-        game.AddPlayer(player1);
-        Code.expect(game.players.size).to.equal(2);
-        game.AddPlayer(player2);
-        Code.expect(game.players.size).to.equal(3);
+        game.AddPlayer(player1.id);
+        Code.expect(game.players.length).to.equal(2);
+        game.AddPlayer(player2.id);
+        Code.expect(game.players.length).to.equal(3);
 
         //Do a game.Start here and expect an exception to be thrown because not enough players
 
-        game.AddPlayer(player3);
-        Code.expect(game.players.size).to.equal(4);
+        game.AddPlayer(player3.id);
+        Code.expect(game.players.length).to.equal(4);
 
         //Do a game.Start here and expect an exception to be thrown because team not assigned
 
@@ -81,15 +81,38 @@ lab.experiment('game', { timeout: 1000 }, () => {
         game.AssignPlayerToTeam(player2.id, 1);
         game.AssignPlayerToTeam(player3.id, 1);
 
-        //Do a game.Start here and expect an exception to be thrown because spy masters not assigned
-
-        game.ChooseSpyMasters();
-
-        const teams = game.GetTeams();
+        let teams = game.GetTeams();
+        Code.expect(teams[0].players.length).to.equal(2);
         Code.expect(teams[0].players[0]).to.equal(creator.id);
         Code.expect(teams[0].players[1]).to.equal(player1.id);
+        Code.expect(teams[1].players.length).to.equal(2);
         Code.expect(teams[1].players[0]).to.equal(player2.id);
         Code.expect(teams[1].players[1]).to.equal(player3.id);
+
+        const player4 = new Player(4);
+        game.AddPlayer(player4.id);
+
+        game.AssignTeamsRandomly();
+        teams = game.GetTeams();
+        Code.expect(teams[0].players.length).to.equal(2);
+        Code.expect(teams[1].players.length).to.equal(3);
+
+        //Change team
+        game.AssignPlayerToTeam(teams[1].players[2], 0);
+        teams = game.GetTeams();
+        Code.expect(teams[0].players.length).to.equal(3);
+        Code.expect(teams[1].players.length).to.equal(2);
+
+        //Do a game.Start here and expect an exception to be thrown because spy masters not assigned
+
+        teams = game.GetTeams();
+        game.AssignSpymaster(0, teams[0].players[0]);
+        Code.expect(teams[0].spyMaster).to.equal(teams[0].players[0]);
+
+        game.ChooseSpyMasters();
+        teams = game.GetTeams();
+        Code.expect(teams[0].players.indexOf(teams[0].spyMaster)).to.not.equal(-1);
+        Code.expect(teams[1].players.indexOf(teams[1].spyMaster)).to.not.equal(-1);
 
         const TYPE_RED_AGENT = 0;
         const TYPE_BLUE_AGENT = 1;
