@@ -141,7 +141,10 @@ internals.Game.prototype.Start = function (board) {
 
 internals.Game.prototype.IsReadyToStart = function () {
 
-    return (this.readyToStart === 0);
+    const enoughPlayers = ((this.teams[0].players.length >= 2) && (this.teams[1].players.length >= 2));
+    const spymastersAssigned = ((this.teams[0].spyMaster !== null) && (this.teams[1].spyMaster !== null));
+
+    return (enoughPlayers && spymastersAssigned);
 };
 
 internals.Game.prototype.SubmitChoice = function (elementValue) {
