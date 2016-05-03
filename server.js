@@ -5,7 +5,6 @@ const GameModule = require('./game');
 const Http = require('http').Server(App);
 const Io = require('socket.io')(Http);
 const Game = GameModule.Game;
-const Player = GameModule.Player;
 
 const internals = {};
 
