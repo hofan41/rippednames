@@ -129,7 +129,6 @@ internals.Game.prototype.GetTeams = function () {
 internals.Game.prototype.Start = function (board) {
 
     if (this.IsReadyToStart() === false) {
-
         throw 'Start game requirements has not been met.';
     }
 
