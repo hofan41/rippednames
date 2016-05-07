@@ -191,7 +191,7 @@ Io.on('connection', (socket) => {
 
         try {
             internals.gameInstances[socket.gameId].game.AssignTeamsRandomly();
-            internals.gameInstances[socket.gameId].game.ChooseSpyMasters();
+            internals.gameInstances[socket.gameId].game.ChooseSpymasters();
             callback(successStatus());
         }
         catch (err) {
@@ -269,7 +269,7 @@ const getTeams = (gameId) => {
 
     for (const team of internals.gameInstances[gameId].game.GetTeams()) {
 
-        const teamObject = { players: team.players, spymaster: team.spyMaster };
+        const teamObject = { players: team.players, spymaster: team.spymaster };
 
         if (team.id === 0) {
 
