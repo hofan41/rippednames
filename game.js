@@ -15,7 +15,7 @@ exports.Team = module.exports.Team = internals.Team = function (id) {
     Hoek.assert(this instanceof internals.Team, 'Team must be instantiated using new');
     this.id = id;
     this.players = [];
-    this.spyMaster = null;
+    this.spymaster = null;
 };
 
 exports.BoardElement = module.exports.BoardElement = internals.BoardElement = function (value, type) {
@@ -53,6 +53,11 @@ internals.Game.prototype.AddPlayer = function (playerId) {
 
 };
 
+internals.Game.prototype.getPlayers = function () {
+
+    return this.players;
+};
+
 internals.Game.prototype.AssignPlayerToTeam = function (playerId, teamId) {
 
     const otherTeamId = (teamId === 0) ? 1 : 0;    //note: hardcoded to 2 teams
@@ -60,8 +65,8 @@ internals.Game.prototype.AssignPlayerToTeam = function (playerId, teamId) {
     if (index !== -1) {
         this.teams[otherTeamId].players.splice(index, 1);
         ++(this.unteamedPlayerCount);
-        if (this.teams[otherTeamId].spyMaster === playerId) {
-            this.teams[otherTeamId].spyMaster = null;
+        if (this.teams[otherTeamId].spymaster === playerId) {
+            this.teams[otherTeamId].spymaster = null;
         }
     }
 
@@ -101,10 +106,10 @@ internals.Game.prototype.AssignTeamsRandomly = function () {
 internals.Game.prototype.AssignSpymaster = function (teamId, playerId) {
 
     this.AssignPlayerToTeam(playerId, teamId);
-    this.teams[teamId].spyMaster = playerId;
+    this.teams[teamId].spymaster = playerId;
 };
 
-internals.Game.prototype.ChooseSpyMasters = function () {
+internals.Game.prototype.ChooseSpymasters = function () {
 
     if (this.unteamedPlayerCount !== 0) {
         let verb = 'are';
@@ -115,20 +120,27 @@ internals.Game.prototype.ChooseSpyMasters = function () {
     }
 
     let randomIndex = Math.floor(Math.random() * this.teams[0].players.length);
-    this.teams[0].spyMaster = this.teams[0].players[randomIndex];
+    this.teams[0].spymaster = this.teams[0].players[randomIndex];
 
     randomIndex = Math.floor(Math.random() * this.teams[1].players.length);
-    this.teams[1].spyMaster = this.teams[1].players[randomIndex];
+    this.teams[1].spymaster = this.teams[1].players[randomIndex];
 };
 
 internals.Game.prototype.GetTeams = function () {
 
-    return (this.teams);
+    return this.teams;
 };
+
+internals.Game.prototype.GetTeam = function (teamId) {
+
+    return this.teams[teamId];
+};
+
 
 internals.Game.prototype.Start = function (board) {
 
     if (this.IsReadyToStart() === false) {
+
         throw 'Start game requirements has not been met.';
     }
 
@@ -142,7 +154,7 @@ internals.Game.prototype.Start = function (board) {
 internals.Game.prototype.IsReadyToStart = function () {
 
     const enoughPlayers = ((this.teams[0].players.length >= 2) && (this.teams[1].players.length >= 2));
-    const spymastersAssigned = ((this.teams[0].spyMaster !== null) && (this.teams[1].spyMaster !== null));
+    const spymastersAssigned = ((this.teams[0].spymaster !== null) && (this.teams[1].spymaster !== null));
 
     return (enoughPlayers && spymastersAssigned);
 };

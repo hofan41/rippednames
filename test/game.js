@@ -50,95 +50,182 @@ lab.experiment('game', { timeout: 1000 }, () => {
 
 lab.experiment('game', { timeout: 1000 }, () => {
 
-    lab.test('can be started', { parallel: true }, (done) => {
+    lab.test('can add create game with 1 player', { parallel: true }, (done) => {
 
-        const creator = new Player(0);
-        Code.expect(creator.id).to.equal(0); //avoid no-unused vars from lint
+        const game = new Game(0, 'Tana');
 
-        const game = new Game(0, creator.id);
-        Code.expect(game).to.be.an.object();
-        Code.expect(game.id).to.equal(0);
-        Code.expect(game.players.length).to.equal(1);
+        const players = game.getPlayers();
 
-        const player1 = new Player(1);
-        const player2 = new Player(2);
-        const player3 = new Player(3);
+        Code.expect(players.length).to.equal(1);
+        Code.expect(players[0]).to.equal('Tana');
 
-        game.AddPlayer(player1.id);
-        Code.expect(game.players.length).to.equal(2);
-        game.AddPlayer(player2.id);
-        Code.expect(game.players.length).to.equal(3);
+        done();
+    });
+});
 
-        //Do a game.Start here and expect an exception to be thrown because not enough players
+lab.experiment('game', { timeout: 1000 }, () => {
 
-        game.AddPlayer(player3.id);
-        Code.expect(game.players.length).to.equal(4);
+    lab.test('can add new players', { parallel: true }, (done) => {
 
-        //Do a game.Start here and expect an exception to be thrown because team not assigned
+        const game = new Game(0, 'Tana');
+        game.AddPlayer('Benson');
 
-        game.AssignPlayerToTeam(creator.id, 0);
-        game.AssignPlayerToTeam(player1.id, 0);
-        game.AssignPlayerToTeam(player2.id, 1);
-        game.AssignPlayerToTeam(player3.id, 1);
+        const players = game.getPlayers();
 
-        let teams = game.GetTeams();
-        Code.expect(teams[0].players.length).to.equal(2);
-        Code.expect(teams[0].players[0]).to.equal(creator.id);
-        Code.expect(teams[0].players[1]).to.equal(player1.id);
-        Code.expect(teams[1].players.length).to.equal(2);
-        Code.expect(teams[1].players[0]).to.equal(player2.id);
-        Code.expect(teams[1].players[1]).to.equal(player3.id);
+        Code.expect(players.length).to.equal(2);
+        Code.expect(players.indexOf('Tana')).to.not.equal(-1);
+        Code.expect(players.indexOf('Benson')).to.not.equal(-1);
 
-        const player4 = new Player(4);
-        game.AddPlayer(player4.id);
+        done();
+    });
+});
+
+lab.experiment('game', { timeout: 1000 }, () => {
+
+    lab.test('can assign players to team', { parallel: true }, (done) => {
+
+        const game = new Game(0, 'Tana');
+        game.AssignPlayerToTeam('Tana', 0);
+
+        const team = game.GetTeam(0);
+
+        Code.expect(team.players.length).to.equal(1);
+        Code.expect(team.players[0]).to.equal('Tana');
+
+        done();
+    });
+});
+
+lab.experiment('game', { timeout: 1000 }, () => {
+
+    lab.test('can assign player as spymaster', { parallel: true }, (done) => {
+
+        const game = new Game(0, 'Tana');
+        game.AssignSpymaster(0, 'Tana');
+
+        const team = game.GetTeam(0);
+
+        Code.expect(team.players.length).to.equal(1);
+        Code.expect(team.players[0]).to.equal('Tana');
+        Code.expect(team.spymaster).to.equal('Tana');
+
+        done();
+    });
+});
+
+lab.experiment('game', { timeout: 1000 }, () => {
+
+    lab.test('can assign players to random teams', { parallel: true }, (done) => {
+
+        const game = new Game(0, 'Tana');
+        game.AddPlayer('Ho-Fan');
+        game.AddPlayer('Kevin');
+        game.AddPlayer('Lan');
+        game.AddPlayer('Benson');
 
         game.AssignTeamsRandomly();
-        teams = game.GetTeams();
-        Code.expect(teams[0].players.length).to.equal(2);
-        Code.expect(teams[1].players.length).to.equal(3);
-        Code.expect(game.players.length).to.equal(5);
-        Code.expect(game.players[0]).to.equal(creator.id);
-        Code.expect(game.players[1]).to.equal(player1.id);
-        Code.expect(game.players[2]).to.equal(player2.id);
-        Code.expect(game.players[3]).to.equal(player3.id);
-        Code.expect(game.players[4]).to.equal(player4.id);
 
-        //Change team
-        game.AssignPlayerToTeam(teams[1].players[2], 0);
-        teams = game.GetTeams();
-        Code.expect(teams[0].players.length).to.equal(3);
-        Code.expect(teams[1].players.length).to.equal(2);
+        const teamA = game.GetTeam(0);
+        const teamB = game.GetTeam(1);
 
-        //Do a game.Start here and expect an exception to be thrown because spy masters not assigned
+        Code.expect(teamA.players.length + teamB.players.length).to.equal(5);
+        Code.expect((teamA.players.indexOf('Tana') !== -1) || (teamB.players.indexOf('Tana') !== -1)).to.equal(true);
+        Code.expect((teamA.players.indexOf('Ho-Fan') !== -1) || (teamB.players.indexOf('Ho-Fan') !== -1)).to.equal(true);
+        Code.expect((teamA.players.indexOf('Kevin') !== -1) || (teamB.players.indexOf('Kevin') !== -1)).to.equal(true);
+        Code.expect((teamA.players.indexOf('Lan') !== -1) || (teamB.players.indexOf('Lan') !== -1)).to.equal(true);
+        Code.expect((teamA.players.indexOf('Benson') !== -1) || (teamB.players.indexOf('Benson') !== -1)).to.equal(true);
 
-        teams = game.GetTeams();
-        game.AssignSpymaster(1, teams[1].players[0]);
-        Code.expect(teams[1].spyMaster).to.equal(teams[1].players[0]);
-        //spymaster changing team
-        game.AssignPlayerToTeam(teams[1].players[0], 0);
-        Code.expect(teams[1].spyMaster).to.equal(null);
+        done();
+    });
+});
 
-        // Assign player2 to blue team to ensure at least 2 players per team
-        game.AssignPlayerToTeam(player2.id, 1);
 
-        game.ChooseSpyMasters();
-        teams = game.GetTeams();
-        Code.expect(teams[0].players.indexOf(teams[0].spyMaster)).to.not.equal(-1);
-        Code.expect(teams[1].players.indexOf(teams[1].spyMaster)).to.not.equal(-1);
+lab.experiment('game', { timeout: 1000 }, () => {
 
-        const TYPE_RED_AGENT = 0;
-        const TYPE_BLUE_AGENT = 1;
-        const TYPE_ASSASSIN = 2;
-        const TYPE_CIVILIAN = 3;
-        const board = [
-            new BoardElement('a', TYPE_RED_AGENT), new BoardElement('b', TYPE_RED_AGENT), new BoardElement('c', TYPE_RED_AGENT), new BoardElement('d', TYPE_RED_AGENT), new BoardElement('e', TYPE_RED_AGENT),
-            new BoardElement('f', TYPE_BLUE_AGENT), new BoardElement('g', TYPE_BLUE_AGENT), new BoardElement('h', TYPE_RED_AGENT), new BoardElement('i', TYPE_BLUE_AGENT), new BoardElement('j', TYPE_BLUE_AGENT),
-            new BoardElement('', TYPE_ASSASSIN), new BoardElement('', TYPE_CIVILIAN), new BoardElement('', TYPE_CIVILIAN), new BoardElement('', TYPE_CIVILIAN), new BoardElement('', TYPE_CIVILIAN),
-            new BoardElement('k', TYPE_RED_AGENT), new BoardElement('l', TYPE_RED_AGENT), new BoardElement('m', TYPE_RED_AGENT), new BoardElement('n', TYPE_RED_AGENT), new BoardElement('o', TYPE_RED_AGENT),
-            new BoardElement('p', TYPE_BLUE_AGENT), new BoardElement('q', TYPE_BLUE_AGENT), new BoardElement('r', TYPE_RED_AGENT), new BoardElement('s', TYPE_BLUE_AGENT), new BoardElement('t', TYPE_BLUE_AGENT)
-        ];
+    lab.test('can assign random spymasters after team selection', { parallel: true }, (done) => {
 
-        game.Start(board);
+        const game = new Game(0, 'Tana');
+        game.AddPlayer('Ho-Fan');
+        game.AddPlayer('Kevin');
+        game.AddPlayer('Lan');
+        game.AddPlayer('Benson');
+
+        game.AssignTeamsRandomly();
+        game.ChooseSpymasters();
+
+        const teamA = game.GetTeam(0);
+        const teamB = game.GetTeam(1);
+
+        Code.expect(teamA.spymaster).to.not.equal(null);
+        Code.expect(teamB.spymaster).to.not.equal(null);
+        Code.expect(teamA.spymaster).to.not.equal(teamB.spymaster);
+
+        done();
+    });
+});
+
+lab.experiment('game', { timeout: 1000 }, () => {
+
+    lab.test('can detect valid team setup', { parallel: true }, (done) => {
+
+        const game = new Game(0, 'Tana');
+        game.AddPlayer('Ho-Fan');
+        game.AddPlayer('Kevin');
+        game.AddPlayer('Lan');
+
+        game.AssignPlayerToTeam('Tana', 0);
+        game.AssignPlayerToTeam('Ho-Fan', 0);
+        game.AssignPlayerToTeam('Kevin', 1);
+        game.AssignPlayerToTeam('Lan', 1);
+
+        game.AssignSpymaster(0, 'Tana');
+        game.AssignSpymaster(1, 'Kevin');
+
+        Code.expect(game.IsReadyToStart()).to.equal(true);
+
+        done();
+    });
+});
+
+lab.experiment('game', { timeout: 1000 }, () => {
+
+    lab.test('can detect not enough players to start', { parallel: true }, (done) => {
+
+        const game = new Game(0, 'Tana');
+        game.AddPlayer('Ho-Fan');
+        game.AddPlayer('Kevin');
+
+        game.AssignPlayerToTeam('Tana', 0);
+        game.AssignPlayerToTeam('Ho-Fan', 0);
+        game.AssignPlayerToTeam('Kevin', 1);
+
+        game.AssignSpymaster(0, 'Tana');
+        game.AssignSpymaster(1, 'Kevin');
+
+        Code.expect(game.IsReadyToStart()).to.equal(false);
+
+        done();
+    });
+});
+
+lab.experiment('game', { timeout: 1000 }, () => {
+
+    lab.test('can detect spymaster not assigned', { parallel: true }, (done) => {
+
+        const game = new Game(0, 'creator');
+        game.AddPlayer('Tana');
+        game.AddPlayer('Ho-Fan');
+        game.AddPlayer('Kevin');
+        game.AddPlayer('Lan');
+
+        game.AssignPlayerToTeam('Tana',0);
+        game.AssignPlayerToTeam('Ho-Fan',0);
+        game.AssignPlayerToTeam('Kevin',1);
+        game.AssignPlayerToTeam('Lan',1);
+
+        game.AssignSpymaster(0, 'Tana');
+
+        Code.expect(game.IsReadyToStart()).to.equal(false);
 
         done();
     });
