@@ -20,6 +20,7 @@
   "homepage": "https://github.com/paradicegames/rippednames#readme",
   "dependencies": {
     "express": "^4.10.2",
+    "fs": "0.0.2",
     "hoek": "^3.0.4",
     "socket.io": "^1.4.5"
   },
