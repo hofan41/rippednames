@@ -51,18 +51,18 @@ exports.Game = module.exports.Game = internals.Game = function (id, creatorId) {
 
     // Define phases of the game
     this.cardColors = {
-        RED: { value: 0, string: 'red' },
-        BLUE: { value: 1, string: 'blue' },
-        GRAY: { value: 2, string: 'gray' },
-        BLACK: { value: 3, string: 'black' },
-        NONE: { value: 4, string: 'none' }
+        RED: 'red',
+        BLUE: 'blue',
+        GRAY: 'gray',
+        BLACK: 'black',
+        NONE: 'none'
     };
 
     this._LoadWords();
     this._LoadDictionary();
 
     this.phase = this.phases.SETUP;
-    this.activeTeam = this.cardColors.RED.string;
+    this.activeTeam = this.cardColors.RED;
     this.remainingGuesses = 0;
     this.remainingRedCards = 0;
     this.remainingBlueCards = 0;
@@ -77,7 +77,7 @@ internals.Game.prototype.Reset = function () {
     this.teams = [new internals.Team(0), new internals.Team(1)];
 
     this.phase = this.phases.SETUP;
-    this.activeTeam = this.cardColors.RED.string;
+    this.activeTeam = this.cardColors.RED;
     this.remainingGuesses = 0;
     this.remainingRedCards = 0;
     this.remainingBlueCards = 0;
@@ -342,10 +342,10 @@ internals.Game.prototype.SelectWord = function (playerId, word) {
     card.selected = true;
     --this.remainingGuesses;
 
-    if (card.color === this.cardColors.RED.string) {
+    if (card.color === this.cardColors.RED) {
         --this.remainingRedCards;
     }
-    else if (card.color === this.cardColors.BLUE.string) {
+    else if (card.color === this.cardColors.BLUE) {
         --this.remainingBlueCards;
     }
 
@@ -354,17 +354,17 @@ internals.Game.prototype.SelectWord = function (playerId, word) {
 
         // Select the winner
         if (this.numRedCardsRemaining === 0) {
-            this.winner = this.cardColors.RED.string;
+            this.winner = this.cardColors.RED;
         }
         else {
-            this.winner = this.cardColors.BLUE.string;
+            this.winner = this.cardColors.BLUE;
         }
 
         // End the game
         this.phase = this.phases.GAME_OVER;
     }
     // Otherwise, if the active team chose the other team's card or a neutral card:
-    else if ((card.color === this._GetInactiveTeam()) || (card.color === this.cardColors.GRAY.string)) {
+    else if ((card.color === this._GetInactiveTeam()) || (card.color === this.cardColors.GRAY)) {
 
         // End this team's turn
         this.remainingGuesses = 0;
@@ -372,7 +372,7 @@ internals.Game.prototype.SelectWord = function (playerId, word) {
         this.phase = this.phases.GIVE_CLUE;
     }
     // Otherwise, if the active team chose the assassin:
-    else if (card.color === this.cardColors.BLACK.string ) {
+    else if (card.color === this.cardColors.BLACK ) {
 
         // The other team is automatically the winner
         this.winner = this._GetInactiveTeam();
@@ -491,7 +491,7 @@ internals.Game.prototype._RandomizeBoardWords = function () {
         const randomWord = this.words[randomIndex];
 
         if (!wordSet.has(randomWord)) {
-            this.board.push({ word: randomWord, color: this.cardColors.NONE.string, selected: false });
+            this.board.push({ word: randomWord, color: this.cardColors.NONE, selected: false });
             wordSet.add(randomWord);
         }
     }
@@ -508,11 +508,11 @@ internals.Game.prototype._RandomizeBoardMap = function () {
 
     if (randomCoin === 0) {
         ++numRedCardsRemaining;
-        this.activeTeam = this.cardColors.RED.string;
+        this.activeTeam = this.cardColors.RED;
     }
     else {
         ++numBlueCardsRemaining;
-        this.activeTeam = this.cardColors.BLUE.string;
+        this.activeTeam = this.cardColors.BLUE;
     }
 
     this.remainingRedCards = numRedCardsRemaining;
@@ -521,19 +521,19 @@ internals.Game.prototype._RandomizeBoardMap = function () {
     for (const card of this.board) {
 
         if (numRedCardsRemaining > 0) {
-            card.color = this.cardColors.RED.string;
+            card.color = this.cardColors.RED;
             --numRedCardsRemaining;
         }
         else if (numBlueCardsRemaining > 0) {
-            card.color = this.cardColors.BLUE.string;
+            card.color = this.cardColors.BLUE;
             --numBlueCardsRemaining;
         }
         else if (numGrayCardsRemaining > 0) {
-            card.color = this.cardColors.GRAY.string;
+            card.color = this.cardColors.GRAY;
             --numGrayCardsRemaining;
         }
         else {
-            card.color = this.cardColors.BLACK.string;
+            card.color = this.cardColors.BLACK;
             --numBlackCardsRemaining;
         }
     }
