@@ -33,7 +33,7 @@ exports.Game = module.exports.Game = internals.Game = function (id, creatorId) {
     this.id = id;
     this.players = [];
     this.players.push(creatorId);
-    this.teams = [new internals.Team(0), new internals.Team(1)];  //note hardcoded to 2 teams
+    this.teams = [new internals.Team('red'), new internals.Team('blue')];  //note hardcoded to 2 teams
 
     this.NUM_RED_CARDS = 8;
     this.NUM_BLUE_CARDS = 8;
@@ -43,26 +43,26 @@ exports.Game = module.exports.Game = internals.Game = function (id, creatorId) {
 
     // Define phases of the game
     this.phases = {
-        SETUP: 0,
-        GIVE_CLUE: 1,
-        SELECT_WORD: 2,
-        GAME_OVER: 3
+        SETUP: 'setup',
+        GIVE_CLUE: 'give_clue',
+        SELECT_WORD: 'select_word',
+        GAME_OVER: 'game_over'
     };
 
     // Define phases of the game
     this.cardColors = {
-        RED: 0,
-        BLUE: 1,
-        GRAY: 2,
-        BLACK: 3,
-        NONE: 4
+        RED: { value: 0, string: 'red' },
+        BLUE: { value: 1, string: 'blue' },
+        GRAY: { value: 2, string: 'gray' },
+        BLACK: { value: 3, string: 'black' },
+        NONE: { value: 4, string: 'none' }
     };
 
     this._LoadWords();
     this._LoadDictionary();
 
     this.phase = this.phases.SETUP;
-    this.activeTeam = 0;
+    this.activeTeam = this.cardColors.RED.string;
     this.remainingGuesses = 0;
     this.remainingRedCards = 0;
     this.remainingBlueCards = 0;
@@ -77,7 +77,7 @@ internals.Game.prototype.Reset = function () {
     this.teams = [new internals.Team(0), new internals.Team(1)];
 
     this.phase = this.phases.SETUP;
-    this.activeTeam = 0;
+    this.activeTeam = this.cardColors.RED.string;
     this.remainingGuesses = 0;
     this.remainingRedCards = 0;
     this.remainingBlueCards = 0;
@@ -176,8 +176,8 @@ internals.Game.prototype.AssignTeamsRandomly = function () {
         throw 'Cannot assign teams randomly in current phase';
     }
 
-    this.teams[0] = new internals.Team(0);
-    this.teams[1] = new internals.Team(1);
+    this.teams[0] = new internals.Team('red');
+    this.teams[1] = new internals.Team('blue');
 
     const firstTeamSize = Math.floor(this.players.length / 2);
 
@@ -342,29 +342,29 @@ internals.Game.prototype.SelectWord = function (playerId, word) {
     card.selected = true;
     --this.remainingGuesses;
 
-    if (card.color === this.cardColors.RED) {
-        --this.numRedCardsRemaining;
+    if (card.color === this.cardColors.RED.string) {
+        --this.remainingRedCards;
     }
-    else if (card.color === this.cardColors.BLUE) {
-        --this.numBlueCardsRemaining;
+    else if (card.color === this.cardColors.BLUE.string) {
+        --this.remainingBlueCards;
     }
 
     // If either team has no more cards remaining:
-    if ((this.numRedCardsRemaining === 0) || (this.numBlueCardsRemaining === 0)) {
+    if ((this.remainingRedCards === 0) || (this.remainingBlueCards === 0)) {
 
         // Select the winner
         if (this.numRedCardsRemaining === 0) {
-            this.winner = this.cardColors.RED;
+            this.winner = this.cardColors.RED.string;
         }
         else {
-            this.winner = this.cardColors.BLUE;
+            this.winner = this.cardColors.BLUE.string;
         }
 
         // End the game
         this.phase = this.phases.GAME_OVER;
     }
     // Otherwise, if the active team chose the other team's card or a neutral card:
-    else if ((card.color === this._GetInactiveTeam()) || (card.color === this.cardColors.GRAY)) {
+    else if ((card.color === this._GetInactiveTeam()) || (card.color === this.cardColors.GRAY.string)) {
 
         // End this team's turn
         this.remainingGuesses = 0;
@@ -372,7 +372,7 @@ internals.Game.prototype.SelectWord = function (playerId, word) {
         this.phase = this.phases.GIVE_CLUE;
     }
     // Otherwise, if the active team chose the assassin:
-    else if (card.color === this.cardColors.BLACK ) {
+    else if (card.color === this.cardColors.BLACK.string ) {
 
         // The other team is automatically the winner
         this.winner = this._GetInactiveTeam();
@@ -415,7 +415,7 @@ internals.Game.prototype.GetGameState = function () {
         phase: this.phase,
         activeTeam: this.activeTeam,
         remainingGuesses: this.remainingGuesses,
-        remainingRedCards: this.remaingRedCards,
+        remainingRedCards: this.remainingRedCards,
         remainingBlueCards: this.remainingBlueCards,
         board: this.board,
         winner: this.winner
@@ -460,21 +460,21 @@ internals.Game.prototype._GetCardFromWord = function (word) {
 
 internals.Game.prototype._GetInactiveTeam = function () {
 
-    const inactiveTeam = (this.activeTeam === 1) ? 0 : 1;
+    const inactiveTeam = (this.activeTeam === 'blue') ? 'red' : 'blue';
 
     return inactiveTeam;
 };
 
 internals.Game.prototype._LoadWords = function () {
 
-    this.words = Fs.readFileSync(__dirname + '/resources/words.txt').toString().split('\n');
+    this.words = Fs.readFileSync(__dirname + '/resources/words.txt').toString().replace(/[\r]+/g,'').split('\n');
 };
 
 internals.Game.prototype._LoadDictionary = function () {
 
     this.dictionary = new Set();
 
-    const dictionaryArray = Fs.readFileSync(__dirname + '/resources/dictionary.txt').toString().split('\n');
+    const dictionaryArray = Fs.readFileSync(__dirname + '/resources/dictionary.txt').toString().replace(/[\r]+/g,'').split('\n');
 
     for (const word of dictionaryArray) {
         this.dictionary.add(word);
@@ -485,13 +485,13 @@ internals.Game.prototype._RandomizeBoardWords = function () {
 
     const wordSet = new Set();
 
-    while (this.board.size < this.BOARD_SIZE) {
+    while (this.board.length < this.BOARD_SIZE) {
 
         const randomIndex = Math.floor(Math.random() * this.words.length);
         const randomWord = this.words[randomIndex];
 
         if (!wordSet.has(randomWord)) {
-            this.board.push({ word: randomWord, color: this.cardColors.NONE, selected: false });
+            this.board.push({ word: randomWord, color: this.cardColors.NONE.string, selected: false });
             wordSet.add(randomWord);
         }
     }
@@ -499,7 +499,7 @@ internals.Game.prototype._RandomizeBoardWords = function () {
 
 internals.Game.prototype._RandomizeBoardMap = function () {
 
-    let numRedCardsRemaining = this.NUM_READ_CARDS;
+    let numRedCardsRemaining = this.NUM_RED_CARDS;
     let numBlueCardsRemaining = this.NUM_BLUE_CARDS;
     let numGrayCardsRemaining = this.NUM_GRAY_CARDS;
     let numBlackCardsRemaining = this.NUM_BLACK_CARDS;
@@ -508,11 +508,11 @@ internals.Game.prototype._RandomizeBoardMap = function () {
 
     if (randomCoin === 0) {
         ++numRedCardsRemaining;
-        this.activeTeam = 0;
+        this.activeTeam = this.cardColors.RED.string;
     }
     else {
         ++numBlueCardsRemaining;
-        this.activeTeam = 1;
+        this.activeTeam = this.cardColors.BLUE.string;
     }
 
     this.remainingRedCards = numRedCardsRemaining;
@@ -521,19 +521,19 @@ internals.Game.prototype._RandomizeBoardMap = function () {
     for (const card of this.board) {
 
         if (numRedCardsRemaining > 0) {
-            card.color = this.cardColors.RED;
+            card.color = this.cardColors.RED.string;
             --numRedCardsRemaining;
         }
         else if (numBlueCardsRemaining > 0) {
-            card.color = this.cardColors.BLUE;
+            card.color = this.cardColors.BLUE.string;
             --numBlueCardsRemaining;
         }
         else if (numGrayCardsRemaining > 0) {
-            card.color = this.cardColors.GRAY;
+            card.color = this.cardColors.GRAY.string;
             --numGrayCardsRemaining;
         }
         else {
-            card.color = this.cardColors.BLACK;
+            card.color = this.cardColors.BLACK.string;
             --numBlackCardsRemaining;
         }
     }
