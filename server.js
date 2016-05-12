@@ -158,8 +158,7 @@ Io.on('connection', (socket) => {
         console.log('[' + socket.gameId + '] ' + socket.username + ' selected to be on ' + data.team + ' team');
 
         try {
-            const teamId = (data.team === 'red') ? 0 : 1;
-            internals.gameInstances[socket.gameId].game.AssignPlayerToTeam(socket.username, teamId);
+            internals.gameInstances[socket.gameId].game.AssignPlayerToTeam(socket.username, data.team);
             callback(successStatus());
         }
         catch (err) {
@@ -175,8 +174,7 @@ Io.on('connection', (socket) => {
         console.log('[' + socket.gameId + '] ' + socket.username + ' selected to be a spymaster on ' + data.team);
 
         try {
-            const teamId = (data.team === 'red') ? 0 : 1;
-            internals.gameInstances[socket.gameId].game.AssignSpymaster(teamId, socket.username);
+            internals.gameInstances[socket.gameId].game.AssignSpymaster(socket.username, data.team);
             callback(successStatus());
         }
         catch (err) {
@@ -219,7 +217,7 @@ Io.on('connection', (socket) => {
         //Otherwise, the game is not ready to start:
         else {
 
-            callback(failStatus('Game cannot start with current settings'));
+            callback(failStatus(err));
             console.log('[' + socket.gameId + '] ' + socket.username + ' was unable to start game');
         }
     });
@@ -269,16 +267,7 @@ const getTeams = (gameId) => {
 
     for (const team of internals.gameInstances[gameId].game.GetTeams()) {
 
-        const teamObject = { players: team.players, spymaster: team.spymaster };
-
-        if (team.id === 0) {
-
-            teamObject.name = 'red';
-        }
-        else {
-
-            teamObject.name = 'blue';
-        }
+        const teamObject = { name: team.id, players: team.players, spymaster: team.spymaster };
 
         teamSettings.teams.push(teamObject);
     }
