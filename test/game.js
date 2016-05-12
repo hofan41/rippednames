@@ -301,7 +301,7 @@ lab.experiment('game', { timeout: 1000 }, () => {
 
         game.GiveClue(playerGivingClue, 'node', 1);
 
-        let board = game.GetGameState().board;
+        let board = game.GetBoard();
         let chosenWord = '';
 
         for (const card of board) {
@@ -312,7 +312,7 @@ lab.experiment('game', { timeout: 1000 }, () => {
             }
         }
 
-        board = game.GetGameState().board;
+        board = game.GetBoard();
 
         for (const card of board) {
             if (chosenWord === card.word) {
@@ -321,7 +321,7 @@ lab.experiment('game', { timeout: 1000 }, () => {
             }
         }
 
-        const newActiveTeam = game.GetGameState().activeTeam;
+        const newActiveTeam = game.GetActiveTeam();
 
         Code.expect(newActiveTeam).to.not.equal(oldActiveTeam);
 
@@ -348,7 +348,7 @@ lab.experiment('game', { timeout: 1000 }, () => {
 
         game.Start();
 
-        const oldActiveTeam = game.GetGameState().activeTeam;
+        const oldActiveTeam = game.GetActiveTeam();
         let playerGivingClue = '';
         let playerGuessing = '';
 
@@ -363,7 +363,7 @@ lab.experiment('game', { timeout: 1000 }, () => {
 
         game.GiveClue(playerGivingClue, 'node', 1);
 
-        const board = game.GetGameState().board;
+        const board = game.GetBoard();
 
         for (const card of board) {
             if ((card.selected === false) && (card.color === 'gray')) {
@@ -372,7 +372,7 @@ lab.experiment('game', { timeout: 1000 }, () => {
             }
         }
 
-        const newActiveTeam = game.GetGameState().activeTeam;
+        const newActiveTeam = game.GetActiveTeam();
 
         Code.expect(newActiveTeam).to.not.equal(oldActiveTeam);
 
@@ -399,7 +399,7 @@ lab.experiment('game', { timeout: 1000 }, () => {
 
         game.Start();
 
-        const activeTeam = game.GetGameState().activeTeam;
+        const activeTeam = game.GetActiveTeam();
         let playerGivingClue = '';
         let playerGuessing = '';
 
@@ -414,7 +414,7 @@ lab.experiment('game', { timeout: 1000 }, () => {
 
         game.GiveClue(playerGivingClue, 'node', 1);
 
-        const board = game.GetGameState().board;
+        const board = game.GetBoard();
 
         for (const card of board) {
             if ((card.selected === false) && (card.color === 'black')) {
@@ -423,8 +423,8 @@ lab.experiment('game', { timeout: 1000 }, () => {
             }
         }
 
-        const phase = game.GetGameState().phase;
-        const winner = game.GetGameState().winner;
+        const phase = game.GetPhase();
+        const winner = game.GetWinner();
 
         Code.expect(phase).to.equal('game_over');
         Code.expect(winner).to.not.equal(activeTeam);
@@ -452,7 +452,7 @@ lab.experiment('game', { timeout: 1000 }, () => {
 
         game.Start();
 
-        const oldActiveTeam = game.GetGameState().activeTeam;
+        const oldActiveTeam = game.GetActiveTeam();
         let playerGivingClue = '';
         let playerGuessing = '';
 
@@ -468,7 +468,7 @@ lab.experiment('game', { timeout: 1000 }, () => {
         game.GiveClue(playerGivingClue, 'node', 1);
         game.PassTurn(playerGuessing);
 
-        const newActiveTeam = game.GetGameState().activeTeam;
+        const newActiveTeam = game.GetActiveTeam();
 
         Code.expect(newActiveTeam).to.not.equal(oldActiveTeam);
 
