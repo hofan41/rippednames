@@ -444,6 +444,50 @@ internals.Game.prototype.GetGameState = function () {
     };
 };
 
+internals.Game.prototype.GetPhase = function () {
+
+    return this.phase;
+};
+
+internals.Game.prototype.GetActiveTeam = function () {
+
+    return this.activeTeam;
+};
+
+internals.Game.prototype.GetCurrentClue = function () {
+
+    return this.clue;
+};
+
+internals.Game.prototype.GetRemainingGuesses = function () {
+
+    return this.remainingGuesses;
+};
+
+internals.Game.prototype.GetRemainingCardsForTeam = function (teamId) {
+
+    // Throw an error if teamId is not a valid team
+    if ((teamId !== 'red') && (teamId !== 'blue')) {
+        throw teamId + ' is an invalid team';
+    }
+
+    if (teamId === 'red') {
+        return this.remainingRedCards;
+    }
+
+    return this.remainingBlueCards;
+};
+
+internals.Game.prototype.GetBoard = function () {
+
+    return this.board;
+};
+
+internals.Game.prototype.GetWinner = function () {
+
+    return this.winner;
+};
+
 internals.Game.prototype._GetTeamIdFromPlayer = function (playerId) {
 
     for (const team of this.teams) {
