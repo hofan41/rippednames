@@ -85,9 +85,9 @@ lab.experiment('game', { timeout: 1000 }, () => {
     lab.test('can assign players to team', { parallel: true }, (done) => {
 
         const game = new Game(0, 'Tana');
-        game.AssignPlayerToTeam('Tana', 0);
+        game.AssignPlayerToTeam('Tana', 'red');
 
-        const team = game.GetTeam(0);
+        const team = game.GetTeam('red');
 
         Code.expect(team.players.length).to.equal(1);
         Code.expect(team.players[0]).to.equal('Tana');
@@ -101,9 +101,9 @@ lab.experiment('game', { timeout: 1000 }, () => {
     lab.test('can assign player as spymaster', { parallel: true }, (done) => {
 
         const game = new Game(0, 'Tana');
-        game.AssignSpymaster(0, 'Tana');
+        game.AssignSpymaster('Tana', 'red');
 
-        const team = game.GetTeam(0);
+        const team = game.GetTeam('red');
 
         Code.expect(team.players.length).to.equal(1);
         Code.expect(team.players[0]).to.equal('Tana');
@@ -125,8 +125,8 @@ lab.experiment('game', { timeout: 1000 }, () => {
 
         game.AssignTeamsRandomly();
 
-        const teamA = game.GetTeam(0);
-        const teamB = game.GetTeam(1);
+        const teamA = game.GetTeam('red');
+        const teamB = game.GetTeam('blue');
 
         Code.expect(teamA.players.length + teamB.players.length).to.equal(5);
         Code.expect((teamA.players.indexOf('Tana') !== -1) || (teamB.players.indexOf('Tana') !== -1)).to.equal(true);
@@ -153,8 +153,8 @@ lab.experiment('game', { timeout: 1000 }, () => {
         game.AssignTeamsRandomly();
         game.ChooseSpymasters();
 
-        const teamA = game.GetTeam(0);
-        const teamB = game.GetTeam(1);
+        const teamA = game.GetTeam('red');
+        const teamB = game.GetTeam('blue');
 
         Code.expect(teamA.spymaster).to.not.equal(null);
         Code.expect(teamB.spymaster).to.not.equal(null);
@@ -173,13 +173,13 @@ lab.experiment('game', { timeout: 1000 }, () => {
         game.AddPlayer('Kevin');
         game.AddPlayer('Lan');
 
-        game.AssignPlayerToTeam('Tana', 0);
-        game.AssignPlayerToTeam('Ho-Fan', 0);
-        game.AssignPlayerToTeam('Kevin', 1);
-        game.AssignPlayerToTeam('Lan', 1);
+        game.AssignPlayerToTeam('Tana', 'red');
+        game.AssignPlayerToTeam('Ho-Fan', 'red');
+        game.AssignPlayerToTeam('Kevin', 'blue');
+        game.AssignPlayerToTeam('Lan', 'blue');
 
-        game.AssignSpymaster(0, 'Tana');
-        game.AssignSpymaster(1, 'Kevin');
+        game.AssignSpymaster('Tana', 'red');
+        game.AssignSpymaster('Kevin', 'blue');
 
         Code.expect(game.IsReadyToStart()).to.equal(true);
 
@@ -195,12 +195,12 @@ lab.experiment('game', { timeout: 1000 }, () => {
         game.AddPlayer('Ho-Fan');
         game.AddPlayer('Kevin');
 
-        game.AssignPlayerToTeam('Tana', 0);
-        game.AssignPlayerToTeam('Ho-Fan', 0);
-        game.AssignPlayerToTeam('Kevin', 1);
+        game.AssignPlayerToTeam('Tana', 'red');
+        game.AssignPlayerToTeam('Ho-Fan', 'red');
+        game.AssignPlayerToTeam('Kevin', 'blue');
 
-        game.AssignSpymaster(0, 'Tana');
-        game.AssignSpymaster(1, 'Kevin');
+        game.AssignSpymaster('Tana', 'red');
+        game.AssignSpymaster('Kevin', 'blue');
 
         Code.expect(game.IsReadyToStart()).to.equal(false);
 
@@ -212,20 +212,265 @@ lab.experiment('game', { timeout: 1000 }, () => {
 
     lab.test('can detect spymaster not assigned', { parallel: true }, (done) => {
 
-        const game = new Game(0, 'creator');
-        game.AddPlayer('Tana');
+        const game = new Game(0, 'Tana');
         game.AddPlayer('Ho-Fan');
         game.AddPlayer('Kevin');
         game.AddPlayer('Lan');
 
-        game.AssignPlayerToTeam('Tana',0);
-        game.AssignPlayerToTeam('Ho-Fan',0);
-        game.AssignPlayerToTeam('Kevin',1);
-        game.AssignPlayerToTeam('Lan',1);
+        game.AssignPlayerToTeam('Tana', 'red');
+        game.AssignPlayerToTeam('Ho-Fan', 'red');
+        game.AssignPlayerToTeam('Kevin', 'blue');
+        game.AssignPlayerToTeam('Lan', 'blue');
 
-        game.AssignSpymaster(0, 'Tana');
+        game.AssignSpymaster('Tana', 'red');
 
         Code.expect(game.IsReadyToStart()).to.equal(false);
+
+        done();
+    });
+});
+
+lab.experiment('game', { timeout: 1000 }, () => {
+
+    lab.test('can receive clue from spymaster', { parallel: true }, (done) => {
+
+        const game = new Game(0, 'Tana');
+        game.AddPlayer('Ho-Fan');
+        game.AddPlayer('Kevin');
+        game.AddPlayer('Lan');
+
+        game.AssignPlayerToTeam('Tana', 'red');
+        game.AssignPlayerToTeam('Ho-Fan', 'red');
+        game.AssignPlayerToTeam('Kevin', 'blue');
+        game.AssignPlayerToTeam('Lan', 'blue');
+
+        game.AssignSpymaster('Tana', 'red');
+        game.AssignSpymaster('Kevin', 'blue');
+
+        game.Start();
+
+        const activeTeam = game.GetGameState().activeTeam;
+
+        if (activeTeam === 'red') {
+            game.GiveClue('Tana', 'node', 1);
+        }
+        else {
+            game.GiveClue('Kevin', 'node', 1);
+        }
+
+        const clue = game.GetGameState().clue;
+
+        Code.expect(clue.word).to.equal('node');
+        Code.expect(clue.count).to.equal(1);
+
+        done();
+    });
+});
+
+lab.experiment('game', { timeout: 1000 }, () => {
+
+    lab.test('can receive correct guess from player', { parallel: true }, (done) => {
+
+        const game = new Game(0, 'Tana');
+        game.AddPlayer('Ho-Fan');
+        game.AddPlayer('Kevin');
+        game.AddPlayer('Lan');
+
+        game.AssignPlayerToTeam('Tana', 'red');
+        game.AssignPlayerToTeam('Ho-Fan', 'red');
+        game.AssignPlayerToTeam('Kevin', 'blue');
+        game.AssignPlayerToTeam('Lan', 'blue');
+
+        game.AssignSpymaster('Tana', 'red');
+        game.AssignSpymaster('Kevin', 'blue');
+
+        game.Start();
+
+        const oldActiveTeam = game.GetGameState().activeTeam;
+        let playerGivingClue = '';
+        let playerGuessing = '';
+
+        if (oldActiveTeam === 'red') {
+            playerGivingClue = 'Tana';
+            playerGuessing = 'Ho-Fan';
+        }
+        else {
+            playerGivingClue = 'Kevin';
+            playerGuessing = 'Lan';
+        }
+
+        game.GiveClue(playerGivingClue, 'node', 1);
+
+        let board = game.GetGameState().board;
+        let chosenWord = '';
+
+        for (const card of board) {
+            if ((card.selected === false) && (card.color === oldActiveTeam)) {
+                chosenWord = card.word;
+                game.SelectWord(playerGuessing, chosenWord);
+                break;
+            }
+        }
+
+        board = game.GetGameState().board;
+
+        for (const card of board) {
+            if (chosenWord === card.word) {
+                Code.expect(card.selected).to.equal(true);
+                break;
+            }
+        }
+
+        const newActiveTeam = game.GetGameState().activeTeam;
+
+        Code.expect(newActiveTeam).to.not.equal(oldActiveTeam);
+
+        done();
+    });
+});
+
+lab.experiment('game', { timeout: 1000 }, () => {
+
+    lab.test('can receive incorrect (neutral) guess from player', { parallel: true }, (done) => {
+
+        const game = new Game(0, 'Tana');
+        game.AddPlayer('Ho-Fan');
+        game.AddPlayer('Kevin');
+        game.AddPlayer('Lan');
+
+        game.AssignPlayerToTeam('Tana', 'red');
+        game.AssignPlayerToTeam('Ho-Fan', 'red');
+        game.AssignPlayerToTeam('Kevin', 'blue');
+        game.AssignPlayerToTeam('Lan', 'blue');
+
+        game.AssignSpymaster('Tana', 'red');
+        game.AssignSpymaster('Kevin', 'blue');
+
+        game.Start();
+
+        const oldActiveTeam = game.GetGameState().activeTeam;
+        let playerGivingClue = '';
+        let playerGuessing = '';
+
+        if (oldActiveTeam === 'red') {
+            playerGivingClue = 'Tana';
+            playerGuessing = 'Ho-Fan';
+        }
+        else {
+            playerGivingClue = 'Kevin';
+            playerGuessing = 'Lan';
+        }
+
+        game.GiveClue(playerGivingClue, 'node', 1);
+
+        const board = game.GetGameState().board;
+
+        for (const card of board) {
+            if ((card.selected === false) && (card.color === 'gray')) {
+                game.SelectWord(playerGuessing, card.word);
+                break;
+            }
+        }
+
+        const newActiveTeam = game.GetGameState().activeTeam;
+
+        Code.expect(newActiveTeam).to.not.equal(oldActiveTeam);
+
+        done();
+    });
+});
+
+lab.experiment('game', { timeout: 1000 }, () => {
+
+    lab.test('can receive assassin guess from player', { parallel: true }, (done) => {
+
+        const game = new Game(0, 'Tana');
+        game.AddPlayer('Ho-Fan');
+        game.AddPlayer('Kevin');
+        game.AddPlayer('Lan');
+
+        game.AssignPlayerToTeam('Tana', 'red');
+        game.AssignPlayerToTeam('Ho-Fan', 'red');
+        game.AssignPlayerToTeam('Kevin', 'blue');
+        game.AssignPlayerToTeam('Lan', 'blue');
+
+        game.AssignSpymaster('Tana', 'red');
+        game.AssignSpymaster('Kevin', 'blue');
+
+        game.Start();
+
+        const activeTeam = game.GetGameState().activeTeam;
+        let playerGivingClue = '';
+        let playerGuessing = '';
+
+        if (activeTeam === 'red') {
+            playerGivingClue = 'Tana';
+            playerGuessing = 'Ho-Fan';
+        }
+        else {
+            playerGivingClue = 'Kevin';
+            playerGuessing = 'Lan';
+        }
+
+        game.GiveClue(playerGivingClue, 'node', 1);
+
+        const board = game.GetGameState().board;
+
+        for (const card of board) {
+            if ((card.selected === false) && (card.color === 'black')) {
+                game.SelectWord(playerGuessing, card.word);
+                break;
+            }
+        }
+
+        const phase = game.GetGameState().phase;
+        const winner = game.GetGameState().winner;
+
+        Code.expect(phase).to.equal('game_over');
+        Code.expect(winner).to.not.equal(activeTeam);
+
+        done();
+    });
+});
+
+lab.experiment('game', { timeout: 1000 }, () => {
+
+    lab.test('can receive pass turn from player', { parallel: true }, (done) => {
+
+        const game = new Game(0, 'Tana');
+        game.AddPlayer('Ho-Fan');
+        game.AddPlayer('Kevin');
+        game.AddPlayer('Lan');
+
+        game.AssignPlayerToTeam('Tana', 'red');
+        game.AssignPlayerToTeam('Ho-Fan', 'red');
+        game.AssignPlayerToTeam('Kevin', 'blue');
+        game.AssignPlayerToTeam('Lan', 'blue');
+
+        game.AssignSpymaster('Tana', 'red');
+        game.AssignSpymaster('Kevin', 'blue');
+
+        game.Start();
+
+        const oldActiveTeam = game.GetGameState().activeTeam;
+        let playerGivingClue = '';
+        let playerGuessing = '';
+
+        if (oldActiveTeam === 'red') {
+            playerGivingClue = 'Tana';
+            playerGuessing = 'Ho-Fan';
+        }
+        else {
+            playerGivingClue = 'Kevin';
+            playerGuessing = 'Lan';
+        }
+
+        game.GiveClue(playerGivingClue, 'node', 1);
+        game.PassTurn(playerGuessing);
+
+        const newActiveTeam = game.GetGameState().activeTeam;
+
+        Code.expect(newActiveTeam).to.not.equal(oldActiveTeam);
 
         done();
     });
