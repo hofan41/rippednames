@@ -130,21 +130,29 @@ Io.on('connection', (socket) => {
                 return;
             }
 
-            // Associate this socket with the username and gameId
-            socket.username = data.username;
-            socket.gameId = data.gameId;
+            try {
 
-            // Add the username the players set
-            internals.gameInstances[data.gameId].players.add(data.username);
+                // Add a new player to the game
+                internals.gameInstances[data.gameId].game.AddPlayer(data.username);
 
-            // Add a new player to the game
-            internals.gameInstances[data.gameId].game.AddPlayer(data.username);
+                // Add the username the players set
+                internals.gameInstances[data.gameId].players.add(data.username);
 
-            // Join this socket to a room identified by the gameId
-            socket.join(data.gameId);
+                // Associate this socket with the username and gameId
+                socket.username = data.username;
+                socket.gameId = data.gameId;
 
-            callback(successStatus());
-            console.log('[' + socket.gameId + '] ' + data.username + ' joined game');
+                // Join this socket to a room identified by the gameId
+                socket.join(data.gameId);
+
+                callback(successStatus());
+                console.log('[' + socket.gameId + '] ' + data.username + ' joined game');
+            }
+            catch (err) {
+
+                callback(failStatus(err));
+                console.log(data.username + ' is unable to join game ' + data.gameId);
+            }
         }
         // Otherwise, the gameId does not exist:
         else {
@@ -212,7 +220,8 @@ Io.on('connection', (socket) => {
             callback(successStatus());
             console.log('[' + socket.gameId + '] ' + socket.username + ' started game');
 
-            Io.to(socket.gameId).emit('update game state', getTeams(socket.gameId));
+            Io.to(socket.gameId).emit('update team settings', getTeams(socket.gameId));
+            Io.to(socket.gameId).emit('update game state', getGameState(socket.gameId));
         }
         //Otherwise, the game is not ready to start:
         else {
@@ -224,30 +233,70 @@ Io.on('connection', (socket) => {
 
     socket.on('reset game', (data, callback) => {
 
-        callback(successStatus());
-        console.log('[' + socket.gameId + '] ' + socket.username + ' reseted game');
-        Io.to(socket.gameId).emit('update team settings', getTeams(socket.gameId));
+        try {
+
+            internals.gameInstances[socket.gameId].Reset();
+
+            callback(successStatus());
+            console.log('[' + socket.gameId + '] ' + socket.username + ' reseted game');
+            Io.to(socket.gameId).emit('update team settings', getTeams(socket.gameId));
+        }
+        catch (err) {
+
+            callback(failStatus(err));
+            console.log('[' + socket.gameId + '] ' + socket.username + ' was unable to reset game');
+        }
     });
 
     socket.on('provide clue', (data, callback) => {
 
-        callback(successStatus());
-        console.log('[' + socket.gameId + '] ' + socket.username + ' provided clue ' + data.word + ':' + data.count);
-        Io.to(socket.gameId).emit('update game state');
+        try {
+
+            internals.gameInstances[socket.gameId].GiveClue(socket.username, data.word, data.count);
+
+            callback(successStatus());
+            console.log('[' + socket.gameId + '] ' + socket.username + ' provided clue ' + data.word + ':' + data.count);
+            Io.to(socket.gameId).emit('update game state', getGameState(socket.gameId));
+        }
+        catch (err) {
+
+            callback(failStatus(err));
+            console.log('[' + socket.gameId + '] ' + socket.username + ' was unable to give clue ' + data.word + ':' + data.count);
+        }
     });
 
     socket.on('select word', (data, callback) => {
 
-        callback(successStatus());
-        console.log('[' + socket.gameId + '] ' + socket.username + ' selected word ' + data.word);
-        Io.to(socket.gameId).emit('update game state');
+        try {
+
+            internals.gameInstances[socket.gameId].SelectWord(socket.username, data.word);
+
+            callback(successStatus());
+            console.log('[' + socket.gameId + '] ' + socket.username + ' selected word ' + data.word);
+            Io.to(socket.gameId).emit('update game state', getGameState(socket.gameId));
+        }
+        catch (err) {
+
+            callback(failStatus(err));
+            console.log('[' + socket.gameId + '] ' + socket.username + ' was unable to select word ' + data.word);
+        }
     });
 
     socket.on('pass turn', (data, callback) => {
 
-        callback(successStatus());
-        console.log('[' + socket.gameId + '] ' + socket.username + ' passed turn');
-        Io.to(socket.gameId).emit('update game state');
+        try {
+
+            internals.gameInstances[socket.gameId].PassTurn(socket.username);
+
+            callback(successStatus());
+            console.log('[' + socket.gameId + '] ' + socket.username + ' passed turn');
+            Io.to(socket.gameId).emit('update game state', getGameState(socket.gameId));
+        }
+        catch (err) {
+
+            callback(failStatus(err));
+            console.log('[' + socket.gameId + '] ' + socket.username + ' was unable to pass turn');
+        }
     });
 });
 
@@ -255,6 +304,16 @@ Http.listen(internals.port, () => {
 
     console.log('listening on *:' + internals.port);
 });
+
+const getGameState = (gameId) => {
+
+    if (!internals.gameInstances.hasOwnProperty(gameId)) {
+        console.log('[' + gameId + '] ' + 'Unable to get game state for game');
+        return {};
+    }
+
+    return internals.gameInstances[gameId].GetGameState();
+};
 
 const getTeams = (gameId) => {
 
