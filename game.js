@@ -66,6 +66,7 @@ exports.Game = module.exports.Game = internals.Game = function (id, creatorId) {
     this.remainingGuesses = 0;
     this.remainingRedCards = 0;
     this.remainingBlueCards = 0;
+    this.clue = null;
     this.board = [];
     this.winner = null;
 };
@@ -74,13 +75,14 @@ internals.Game.prototype.Reset = function () {
 
     this.players = [];
     this.players.push(creatorId);
-    this.teams = [new internals.Team(0), new internals.Team(1)];
+    this.teams = [new internals.Team('red'), new internals.Team('blue')];
 
     this.phase = this.phases.SETUP;
     this.activeTeam = this.cardColors.RED;
     this.remainingGuesses = 0;
     this.remainingRedCards = 0;
     this.remainingBlueCards = 0;
+    this.clue = null;
     this.board = [];
     this.winner = null;
 };
@@ -139,7 +141,7 @@ internals.Game.prototype.AssignPlayerToTeam = function (playerId, teamId) {
     }
 
     // Throw an error if teamId is not a valid team
-    if ((teamId !== 0) && (teamId !== 1)) {
+    if ((teamId !== 'red') && (teamId !== 'blue')) {
         throw teamId + ' is an invalid team';
     }
 
@@ -148,24 +150,24 @@ internals.Game.prototype.AssignPlayerToTeam = function (playerId, teamId) {
         throw 'Cannot assign player to team in current phase';
     }
 
-    const otherTeamId = (teamId === 0) ? 1 : 0;    //note: hardcoded to 2 teams
-    const index = this.teams[otherTeamId].players.indexOf(playerId);
+    const otherTeamId = (teamId === 'red') ? 'blue' : 'red';
+    const index = this.GetTeam(otherTeamId).players.indexOf(playerId);
 
     // If the player is already on the other team
     if (index !== -1) {
 
         // Remove player from other team
-        this.teams[otherTeamId].players.splice(index, 1);
+        this.GetTeam(otherTeamId).players.splice(index, 1);
 
         // If needed, remove player as other team's spymaster
-        if (this.teams[otherTeamId].spymaster === playerId) {
-            this.teams[otherTeamId].spymaster = null;
+        if (this.GetTeam(otherTeamId).spymaster === playerId) {
+            this.GetTeam(otherTeamId).spymaster = null;
         }
     }
 
     // Add player to specified team if he is not already on it
-    if (this.teams[teamId].players.indexOf(playerId) === -1) {
-        this.teams[teamId].players.push(playerId);
+    if (this.GetTeam(teamId).players.indexOf(playerId) === -1) {
+        this.GetTeam(teamId).players.push(playerId);
     }
 };
 
@@ -181,29 +183,34 @@ internals.Game.prototype.AssignTeamsRandomly = function () {
 
     const firstTeamSize = Math.floor(this.players.length / 2);
 
-    while (this.teams[0].players.length < firstTeamSize) {
+    while (this.GetTeam('red').players.length < firstTeamSize) {
         const randomIndex = Math.floor(Math.random() * this.players.length);
-        this.AssignPlayerToTeam(this.players[randomIndex], 0);
+        this.AssignPlayerToTeam(this.players[randomIndex], 'red');
     }
 
     for (const playerId of this.players) {
 
         // If this player is not on the first team, assign him to the second team:
-        if (this.teams[0].players.indexOf(playerId) === -1) {
-            this.AssignPlayerToTeam(playerId, 1);
+        if (this.GetTeam('red').players.indexOf(playerId) === -1) {
+            this.AssignPlayerToTeam(playerId, 'blue');
         }
     }
 };
 
-internals.Game.prototype.AssignSpymaster = function (teamId, playerId) {
+internals.Game.prototype.AssignSpymaster = function (playerId, teamId) {
 
     // Throw an error if game is not in setup
     if (this.phase !== this.phases.SETUP) {
         throw 'Cannot assign spymasters in current phase';
     }
 
+    // Throw an error if teamId is not a valid team
+    if ((teamId !== 'red') && (teamId !== 'blue')) {
+        throw teamId + ' is an invalid team';
+    }
+
     this.AssignPlayerToTeam(playerId, teamId);
-    this.teams[teamId].spymaster = playerId;
+    this.GetTeam(teamId).spymaster = playerId;
 };
 
 internals.Game.prototype.ChooseSpymasters = function () {
@@ -213,14 +220,14 @@ internals.Game.prototype.ChooseSpymasters = function () {
         throw 'Cannot randomly assign spymasters in current phase';
     }
 
-    if (this.teams[0].players.length > 0) {
-        const randomIndex = Math.floor(Math.random() * this.teams[0].players.length);
-        this.teams[0].spymaster = this.teams[0].players[randomIndex];
+    if (this.GetTeam('red').players.length > 0) {
+        const randomIndex = Math.floor(Math.random() * this.GetTeam('red').players.length);
+        this.GetTeam('red').spymaster = this.GetTeam('red').players[randomIndex];
     }
 
-    if (this.teams[1].players.length > 0) {
-        const randomIndex = Math.floor(Math.random() * this.teams[1].players.length);
-        this.teams[1].spymaster = this.teams[1].players[randomIndex];
+    if (this.GetTeam('blue').players.length > 0) {
+        const randomIndex = Math.floor(Math.random() * this.GetTeam('blue').players.length);
+        this.GetTeam('blue').spymaster = this.GetTeam('blue').players[randomIndex];
     }
 };
 
@@ -232,13 +239,19 @@ internals.Game.prototype.GetTeams = function () {
 internals.Game.prototype.GetTeam = function (teamId) {
 
     // Throw an error if teamId is not a valid team
-    if ((teamId !== 0) && (teamId !== 1)) {
+    if ((teamId !== 'red') && (teamId !== 'blue')) {
         throw teamId + ' is an invalid team';
     }
 
-    return this.teams[teamId];
-};
+    for (const team of this.teams) {
 
+        if (teamId === team.id) {
+            return team;
+        }
+    }
+
+    return null;
+};
 
 internals.Game.prototype.Start = function () {
 
@@ -255,8 +268,8 @@ internals.Game.prototype.Start = function () {
 
 internals.Game.prototype.IsReadyToStart = function () {
 
-    const enoughPlayers = ((this.teams[0].players.length >= 2) && (this.teams[1].players.length >= 2));
-    const spymastersAssigned = ((this.teams[0].spymaster !== null) && (this.teams[1].spymaster !== null));
+    const enoughPlayers = ((this.GetTeam('red').players.length >= 2) && (this.GetTeam('blue').players.length >= 2));
+    const spymastersAssigned = ((this.GetTeam('red').spymaster !== null) && (this.GetTeam('blue').spymaster !== null));
 
     return (enoughPlayers && spymastersAssigned);
 };
@@ -300,7 +313,7 @@ internals.Game.prototype.GiveClue = function (playerId, word, count) {
         throw word + ' is not in the dictionary';
     }
 
-    this.clue = { wordClue: word, count: count };
+    this.clue = { word: word, count: count };
     this.remainingGuesses = count;
     this.phase = this.phases.SELECT_WORD;
 };
@@ -312,7 +325,7 @@ internals.Game.prototype.SelectWord = function (playerId, word) {
         throw playerId + ' is not a current player';
     }
 
-    // Throw an error if the current phase is not GIVE_CLUE
+    // Throw an error if the current phase is not SELECT_WORD
     if (this.phase !== this.phases.SELECT_WORD) {
         throw 'Current phase is not \'SELECT WORD\'';
     }
@@ -367,17 +380,19 @@ internals.Game.prototype.SelectWord = function (playerId, word) {
     else if ((card.color === this._GetInactiveTeam()) || (card.color === this.cardColors.GRAY)) {
 
         // End this team's turn
-        this.remainingGuesses = 0;
-        this.activeTeam = this._GetInactiveTeam();
-        this.phase = this.phases.GIVE_CLUE;
+        this._PassTurn();
     }
     // Otherwise, if the active team chose the assassin:
     else if (card.color === this.cardColors.BLACK ) {
 
         // The other team is automatically the winner
         this.winner = this._GetInactiveTeam();
-
         this.phase = this.phases.GAME_OVER;
+    }
+    else if (this.remainingGuesses === 0) {
+
+        // End this team's turn
+        this._PassTurn();
     }
 };
 
@@ -388,7 +403,7 @@ internals.Game.prototype.PassTurn = function (playerId) {
         throw playerId + ' is not a current player';
     }
 
-    // Throw an error if the current phase is not GIVE_CLUE
+    // Throw an error if the current phase is not SELECT_WORD
     if (this.phase !== this.phases.SELECT_WORD) {
         throw 'Current phase is not \'SELECT WORD\'';
     }
@@ -403,8 +418,14 @@ internals.Game.prototype.PassTurn = function (playerId) {
         throw playerId + ' is not on active team';
     }
 
+    this._PassTurn();
+};
+
+internals.Game.prototype._PassTurn = function () {
+
     // End this team's turn
     this.remainingGuesses = 0;
+    this.clue = null;
     this.activeTeam = this._GetInactiveTeam();
     this.phase = this.phases.GIVE_CLUE;
 };
@@ -414,6 +435,7 @@ internals.Game.prototype.GetGameState = function () {
     return {
         phase: this.phase,
         activeTeam: this.activeTeam,
+        clue: this.clue,
         remainingGuesses: this.remainingGuesses,
         remainingRedCards: this.remainingRedCards,
         remainingBlueCards: this.remainingBlueCards,
@@ -448,7 +470,7 @@ internals.Game.prototype._IsPlayerSpymaster = function (playerId) {
 
 internals.Game.prototype._GetCardFromWord = function (word) {
 
-    for (card of this.board) {
+    for (const card of this.board) {
 
         if (card.word === word) {
             return card;
