@@ -4,30 +4,162 @@
         <title>Rippednames</title>
     </head>
     <body>
-        <form id>
-            User: <input id="username" type="text"><br>
-            Game: <input id="gameId" type="text"><br>
-            <input class="create" type="submit" value="Create Game">
-            <input class="join" type="submit" value="Join Game">
-        </form>
-        <script src="/socket.io/socket.io.js"></script>
-        <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+        <div id='createJoin'>
+            User: <input id='username' type='text'><br>
+            Game: <input id='gameId' type='text'><br>
+            <input class='create' type='submit' value='Create Game'>
+            <input class='join' type='submit' value='Join Game'>
+        </div>
+        <div id='gameInfo'>
+        </div>
+        <div id='teamSetup'>
+            <input class='becomeRedSpymaster' type='submit' value='Become Red Spymaster'>
+            <input class='becomeBlueSpymaster' type='submit' value='Become Blue Spymaster'>
+            <br>
+            <input class='joinRed' type='submit' value='Join Red Team'>
+            <input class='joinBlue' type='submit' value='Join Blue Team'>
+            <br>
+            <input class='randomizeTeam' type='submit' value='Randomize Team'>
+        </div>
+        <div id='text'>
+        </div>
+        <script src='/socket.io/socket.io.js'></script>
+        <script src='http://code.jquery.com/jquery-1.11.1.js'></script>
         <script>
-            var socket = io();
+            let socket = io();
 
-            $('.create').click(function() {
-                socket.emit('create game', $('#username').val());
+            const hideCreateJoin = () => {
+
+                document.getElementById('createJoin').style.display = 'none';
+            };
+
+            const hideTeamSetup = () => {
+
+                document.getElementById('teamSetup').style.display = 'none';
+            };
+
+            const showTeamSetup = () => {
+
+                document.getElementById('teamSetup').style.display = 'inline';
+            };
+
+            const print = (string) => {
+
+                document.getElementById('text').innerHTML += string + '<br>';
+            };
+
+            const clearUsernameGameTextBoxes = () => {
+
                 $('#username').val('');
                 $('#gameId').val('');
+            };
+
+            const createGameCallback = (data) => {
+
+                print('create game: ' + JSON.stringify(data));
+
+                if (data.status === 'success') {
+                    hideCreateJoin();
+                    showTeamSetup();
+                    document.getElementById('gameInfo').innerHTML = 'Hi ' + $('#username').val() + '! Welcome to game ' + data.gameId;
+                }
+
+                clearUsernameGameTextBoxes();
+            };
+
+            const joinGameCallback = (data) => {
+
+                print('join game: ' + JSON.stringify(data));
+
+                if (data.status === 'success') {
+                    hideCreateJoin();
+                    showTeamSetup();
+                    document.getElementById('gameInfo').innerHTML = 'Hi ' + $('#username').val() + '! Welcome to game ' + $('#gameId').val();
+                }
+
+                clearUsernameGameTextBoxes();
+            };
+
+            const joinRedTeamCallback = (data) => {
+
+                print('join red: ' + JSON.stringify(data));
+            };
+
+            const joinBlueTeamCallback = (data) => {
+
+                print('join blue: ' + JSON.stringify(data));
+            };
+
+            const becomeRedSpymasterCallback = (data) => {
+
+                print('become red spymaster: ' + JSON.stringify(data));
+            };
+
+            const becomeBlueSpymasterCallback = (data) => {
+
+                print('become blue spymaster: ' + JSON.stringify(data));
+            };
+
+            const randomizeTeamCallback = (data) => {
+
+                print('randomize team: ' + JSON.stringify(data));
+            };
+
+            const createGame = () => {
+
+                socket.emit('create game', { username: $('#username').val() }, createGameCallback);
                 return false;
+            };
+
+            const joinGame = () => {
+
+                socket.emit('join game', { username: $('#username').val(), gameId: $('#gameId').val() }, joinGameCallback);
+                return false;
+            };
+
+            const joinRedTeam = () => {
+
+                socket.emit('select team', { team: 'red' }, joinRedTeamCallback);
+                return false;
+            };
+
+            const joinBlueTeam = () => {
+
+                socket.emit('select team', { team: 'blue' }, joinBlueTeamCallback);
+                return false;
+            };
+
+            const becomeRedSpyMaster = () => {
+
+                socket.emit('select as spymaster', { team: 'red' }, becomeRedSpymasterCallback);
+                return false;
+            };
+
+            const becomeBlueSpyMaster = () => {
+
+                socket.emit('select as spymaster', { team: 'blue' }, becomeBlueSpymasterCallback);
+                return false;
+            };
+
+            const randomizeTeam = () => {
+
+                socket.emit('randomize team', randomizeTeamCallback);
+                return false;
+            };
+
+            socket.on('update team settings', (data) => {
+
+                print('teams: ' + JSON.stringify(data));
             });
 
-            $('.join').click(function() {
-                socket.emit('join game', { username: $('#username').val(), gameId: $('#gameId').val() });
-                $('#username').val('');
-                $('#gameId').val('');
-                return false;
-            });
+            $('.create').click(createGame);
+            $('.join').click(joinGame);
+            $('.joinRed').click(joinRedTeam);
+            $('.joinBlue').click(joinBlueTeam);
+            $('.becomeRedSpymaster').click(becomeRedSpyMaster);
+            $('.becomeBlueSpymaster').click(becomeBlueSpyMaster);
+            $('.randomizeTeam').click(randomizeTeam);
+            hideTeamSetup();
 
         </script>
     </body>
